@@ -4,7 +4,7 @@ import tensorflow as tf
 import random
 from gen_dataloader import Gen_Data_loader, Likelihood_data_loader
 from target_lstm import TARGET_LSTM
-import cPickle
+import pickle
 
 #########################################################################################
 #  Generator  Hyper-parameters
@@ -51,7 +51,7 @@ def target_loss(sess, target_lstm, data_loader):
     supervised_g_losses = []
     data_loader.reset_pointer()
 
-    for it in xrange(data_loader.num_batch):
+    for it in range(data_loader.num_batch):
         batch = data_loader.next_batch()
         g_loss = sess.run(target_lstm.pretrain_loss, {target_lstm.x: batch})
         supervised_g_losses.append(g_loss)
@@ -63,12 +63,12 @@ def pre_train_epoch(sess, trainable_model, data_loader):
     supervised_g_losses = []
     data_loader.reset_pointer()
 
-    for it in xrange(data_loader.num_batch):
+    for it in range(data_loader.num_batch):
         batch = data_loader.next_batch()
         _, g_loss, g_pred = trainable_model.pretrain_step(sess, batch)
         supervised_g_losses.append(g_loss)
 
-    print '>>>> generator train loss:', np.mean(supervised_g_losses)
+    print('>>>> generator train loss: {}'.format(np.mean(supervised_g_losses)))
     return np.mean(supervised_g_losses)
 
 
@@ -83,30 +83,34 @@ def main():
     vocab_size = 5000
 
     generator = get_trainable_model(vocab_size)
-    target_params = cPickle.load(open('save/target_params.pkl'))
+    with open('save/target_params.pkl', 'rb') as fin:
+        u = pickle._Unpickler(fin)
+        u.encoding = 'latin1'
+        target_params = u.load()
+
     target_lstm = TARGET_LSTM(vocab_size, 64, 32, 32, 20, 0, target_params)
 
     config = tf.ConfigProto()
     # config.gpu_options.per_process_gpu_memory_fraction = 0.5
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
-    sess.run(tf.global_variables_initializer())
+    sess.run(tf.initialize_all_variables())
 
     generate_samples(sess, target_lstm, 64, 10000, positive_file)
     gen_data_loader.create_batches(positive_file)
 
     log = open('log/experiment-log.txt', 'w')
     #  pre-train generator
-    print 'Start pre-training...'
+    print('Start pre-training...')
     log.write('pre-training...\n')
-    for epoch in xrange(PRE_EPOCH_NUM):
-        print 'pre-train epoch:', epoch
+    for epoch in range(PRE_EPOCH_NUM):
+        print('pre-train epoch: {}'.format(epoch))
         loss = pre_train_epoch(sess, generator, gen_data_loader)
         if epoch % 5 == 0:
             generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file)
             likelihood_data_loader.create_batches(eval_file)
             test_loss = target_loss(sess, target_lstm, likelihood_data_loader)
-            print 'pre-train epoch ', epoch, 'test_loss ', test_loss
+            print('pre-train epoch {} test_loss {}'.format(epoch, test_loss))
             buffer = str(epoch) + ' ' + str(test_loss) + '\n'
             log.write(buffer)
 

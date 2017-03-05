@@ -12,7 +12,7 @@ def highway(input_, size, layer_size=1, bias=-2, f=tf.nn.relu):
     where g is nonlinearity, t is transform gate, and (1 - t) is carry gate.
     """
     output = input_
-    for idx in xrange(layer_size):
+    for idx in range(layer_size):
         output = f(tf.nn.rnn_cell._linear(output, size, 0, scope='output_lin_%d' % idx))
 
         transform_gate = tf.sigmoid(
