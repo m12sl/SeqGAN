@@ -191,7 +191,7 @@ def main():
         #  train discriminator
         dis_x_train, dis_y_train = dis_data_loader.load_train_data(positive_file, negative_file)
         dis_batches = dis_data_loader.batch_iter(
-            zip(dis_x_train, dis_y_train), dis_batch_size, dis_num_epochs
+            list(zip(dis_x_train, dis_y_train)), dis_batch_size, dis_num_epochs
         )
 
         for batch in dis_batches:
@@ -240,7 +240,7 @@ def main():
             generate_samples(sess, generator, BATCH_SIZE, generated_num, negative_file)
 
             dis_x_train, dis_y_train = dis_data_loader.load_train_data(positive_file, negative_file)
-            dis_batches = dis_data_loader.batch_iter(zip(dis_x_train, dis_y_train), dis_batch_size, 3)
+            dis_batches = dis_data_loader.batch_iter(list(zip(dis_x_train, dis_y_train)), dis_batch_size, 3)
 
             for batch in dis_batches:
                 try:
